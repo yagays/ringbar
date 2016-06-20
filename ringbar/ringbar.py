@@ -23,17 +23,29 @@ def make_print_line(line_list, time_step_list, bin_width):
         print_progress = ""
         for bin_dt in time_step_list:
             l_start = duration["start"]
-            l_end = duration["end"]
             bin_td = dt.timedelta(minutes=bin_width)
+            if duration["error"]:
+                l_end = duration["error"]
 
-            if bin_dt + bin_td <= l_start:
-                print_progress += "."
-            elif l_end < bin_dt:
-                print_progress += "."
-            elif bin_dt <= l_end < bin_dt + bin_td:
-                print_progress += ">"
+                if bin_dt + bin_td <= l_start:
+                    print_progress += "."
+                elif l_end < bin_dt:
+                    print_progress += "."
+                elif bin_dt <= l_end < bin_dt + bin_td:
+                    print_progress += "x"
+                else:
+                    print_progress += "="
             else:
-                print_progress += "="
+                l_error = duration["end"]
+
+                if bin_dt + bin_td <= l_start:
+                    print_progress += "."
+                elif l_error < bin_dt:
+                    print_progress += "."
+                elif bin_dt <= l_error < bin_dt + bin_td:
+                    print_progress += ">"
+                else:
+                    print_progress += "="
 
         print_progress_dict[batch_name] = "|" + print_progress + "|"
     return print_progress_dict
@@ -88,14 +100,19 @@ class RingBar():
                                              self.bin_width)
         self.line_data = OrderedDict()
 
-    def add(self, title, line_time):
-        if len(line_time) == 2:
-            t_start = dt.datetime.strptime(line_time[0], self.datetime_format)
-            t_end = dt.datetime.strptime(line_time[1], self.datetime_format)
-        elif len(line_time) == 1:
-            t_start = dt.datetime.strptime(line_time[0], self.datetime_format)
+    def add(self, title, start, end="", error=""):
+        t_start = dt.datetime.strptime(start, self.datetime_format)
+        if end:
+            t_end = dt.datetime.strptime(end, self.datetime_format)
+        else:
             t_end = dt.datetime.today()
-        self.line_data[title] = {"start": t_start, "end": t_end}
+        if error:
+            t_error = dt.datetime.strptime(error, self.datetime_format)
+        else:
+            t_error = ""
+
+        self.line_data[title] = {"start": t_start,
+                                 "end": t_end, "error": t_error}
 
     def add_list(self, line_time_list):
         for line in line_time_list:
